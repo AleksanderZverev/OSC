@@ -1,8 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
+using System.Drawing;
 using System.Windows.Forms;
 using WinFormsInfrastructure.Constructors;
+using WinFormsInfrastructure.Extensions;
 
 namespace OSCalendar.MainWindow
 {
@@ -33,8 +33,26 @@ namespace OSCalendar.MainWindow
         private void CreateView()
         {
             table = constructor.CreateTableLayoutPanel("100%");
-            header = constructor.CreateLabel(Date.Day.ToString());
+            table.BackColor = Color.LightCoral;
+
+            header = constructor.CreateLabel();
+            header.ForeColor = Color.Bisque;
+            header.Paint += Header_Paint;
             text = constructor.CreateLabel("(text)");
+
+            table.PushRow(header, SizeType.Absolute, 15, 0);
+            table.PushRow(text, SizeType.Percent, 100, 0);
+
+            var now = DateTime.Now;
+            if (Date.Month == now.Month && Date.Day == now.Day)
+            {
+                table.BackColor = Color.LightBlue;
+            }
+        }
+
+        private void Header_Paint(object sender, PaintEventArgs e)
+        {
+            header.Text = Date.Day.ToString();
         }
     }
 }

@@ -12,7 +12,12 @@ namespace OSCalendar.MainWindow
 {
     public class MainForm : Form
     {
+        private int TodayRow { get; set; } = 2;
+        private int Rows { get; set; } = 5;
+        private DateTime CurrentStartDate { get; set; }
+
         private TableLayoutPanel mainTable;
+        private List<CalendarCell> cells = new List<CalendarCell>();
 
         public MainForm()
         {
@@ -21,15 +26,15 @@ namespace OSCalendar.MainWindow
             //this.SetStyle(ControlStyles.SupportsTransparentBackColor, true);
             //BackColor = Color.Transparent;
 
+            CurrentStartDate = CalculateStartDate(DateTime.Now);
+
             var constructor = new FormConstructor(new MainFormThemeManager());
 
             mainTable = constructor.CreateTableLayoutPanel("100%");
 
-
-            var rows = 5;
             var header = CreateHeader(constructor);
             var dayOfWeeks = CreateDayOfWeeks(constructor);
-            var weeksTable = CreateWeeks(constructor, rows);
+            var weeksTable = CreateWeeks(constructor, Rows);
 
             mainTable.PushRow(header, SizeType.Percent, 5, 0);
             mainTable.PushRow(dayOfWeeks, SizeType.Absolute, 25, 0);
@@ -59,6 +64,7 @@ namespace OSCalendar.MainWindow
             title.BackColor = Color.FromArgb(50, 211, 211, 211);
 
             var previousMonthBtn = constructor.CreateButton("B");
+            previousMonthBtn.Click += PreviousMonthBtn_Click;
             var nextMonthBtn = constructor.CreateButton("N");
             var settingsBtn = constructor.CreateButton("S");
 
@@ -68,6 +74,24 @@ namespace OSCalendar.MainWindow
             table.PushColumn(settingsBtn, 3);
 
             return table;
+        }
+
+        private void PreviousMonthBtn_Click(object sender, EventArgs e)
+        {
+            CurrentStartDate = CurrentStartDate.AddDays(-Rows * 7);
+            UpdateCells();
+            Refresh();
+        }
+
+        private void UpdateCells()
+        {
+            var startDate = CurrentStartDate;
+
+            foreach (var calendarCell in cells)
+            {
+                calendarCell.Date = startDate;
+                startDate = startDate.AddDays(1);
+            }
         }
 
         private TableLayoutPanel CreateRowTable(IFormConstructor constructor)
@@ -103,6 +127,7 @@ namespace OSCalendar.MainWindow
 
         private Control CreateWeeks(IFormConstructor constructor, int rows)
         {
+            var startDate = CurrentStartDate;
             var table = constructor.CreateTableLayoutPanel(SizeType.Percent, 100);
             var rowHeightPercent = 100 / rows;
 
@@ -115,11 +140,13 @@ namespace OSCalendar.MainWindow
 
                 for (var j = 1; j < 8; j++)
                 {
-                    var calendarCell = new CalendarCell(constructor);
+                    var calendarCell = new CalendarCell(constructor) {Date = startDate};
                     var dayCell = calendarCell.GetView();
-                    dayCell.BackColor = Color.LightCoral;
-                    
+
                     rowTable.PushColumn(dayCell, j);
+
+                    startDate = startDate.AddDays(1);
+                    cells.Add(calendarCell);
                 }
 
                 table.PushRow(rowTable, SizeType.Percent, rowHeightPercent, 0);
@@ -127,5 +154,11 @@ namespace OSCalendar.MainWindow
 
             return table;
         }
+
+        private DateTime CalculateStartDate(DateTime from)
+        {
+            return from.AddDays(-((int)from.DayOfWeek + 1 + 7 * (TodayRow - 1)));
+        }
+            
     }
 }
