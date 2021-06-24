@@ -4,6 +4,7 @@ using System.Windows.Forms;
 using OSCalendar.Domain.Entities;
 using OSCalendar.Domain.Storages;
 using OSCalendar.EditCellWindow;
+using OSCalendar.Instruments;
 using WinFormsInfrastructure.Constructors;
 using WinFormsInfrastructure.Extensions;
 
@@ -44,8 +45,10 @@ namespace OSCalendar.MainWindow
         {
             table = constructor.CreateTableLayoutPanel("100%");
 
+            var headerHeight = 20;
             header = constructor.CreateLabel();
             header.ForeColor = BackBlack;
+            header.TextAlign = ContentAlignment.MiddleRight;
             header.Paint += Header_Paint;
             header.MouseClick += Table_MouseClick;
 
@@ -54,8 +57,24 @@ namespace OSCalendar.MainWindow
             text.Paint += Text_Paint;
             text.MouseClick += Table_MouseClick;
 
-            table.PushRow(header, SizeType.Absolute, 20, 0);
-            table.PushRow(text, SizeType.Percent, 100, 0);
+            if (DaysEquals(Date, DateTime.Now))
+            {
+                var headerTable = constructor.CreateTableLayoutPanel("100% 25px");
+                
+                var stopwatch = new Stopwatch(constructor, storage, headerHeight);
+                var stopwatchView = stopwatch.GetView();
+
+                headerTable.PushRow(stopwatchView, SizeType.Percent, 100, 0);
+                headerTable.PushColumn(header, 1);
+
+                table.PushRow(headerTable, SizeType.Absolute, headerHeight, 0);
+            }
+            else
+            {
+                table.PushRow(header, SizeType.Absolute, headerHeight, 0);
+            }
+            
+            table.PushRow(text, SizeType.Percent, 80, 0);
             table.Paint += Table_Paint;
             table.MouseClick += Table_MouseClick;
             table.Margin = new Padding(1);
@@ -63,7 +82,7 @@ namespace OSCalendar.MainWindow
 
         private void Text_Paint(object sender, PaintEventArgs e)
         {
-            var record = storage.Get(d => CompareDates(Date, d.Date));
+            var record = storage.Get(d => DaysEquals(Date, d.Date));
             text.Text = record?.Text;
         }
 
@@ -118,7 +137,7 @@ namespace OSCalendar.MainWindow
             header.Text = day == 1 ? Date.ToString("d MMMM") : day.ToString();
         }
 
-        private bool CompareDates(DateTime d1, DateTime d2) =>
+        private bool DaysEquals(DateTime d1, DateTime d2) =>
             d1.Year == d2.Year && d1.Month == d2.Month && d1.Day == d2.Day;
     }
 }

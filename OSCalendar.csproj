@@ -7,6 +7,15 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Images\Icons\pause.png" />
+    <None Remove="Images\Icons\pause_hover.png" />
+    <None Remove="Images\Icons\play.png" />
+    <None Remove="Images\Icons\play_hover.png" />
+    <None Remove="Images\Icons\stop.png" />
+    <None Remove="Images\Icons\stop_hover.png" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
   </ItemGroup>
 
@@ -15,7 +24,27 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Images\Icons\" />
+    <Resource Include="Images\Icons\pause_hover.png" />
+    <Resource Include="Images\Icons\play.png" />
+    <Resource Include="Images\Icons\pause.png" />
+    <Resource Include="Images\Icons\play_hover.png" />
+    <Resource Include="Images\Icons\stop.png" />
+    <Resource Include="Images\Icons\stop_hover.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="Properties\Resources.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Update="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
   </ItemGroup>
 
 </Project>

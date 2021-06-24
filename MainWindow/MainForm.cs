@@ -13,7 +13,7 @@ namespace OSCalendar.MainWindow
 {
     public class MainForm : Form
     {
-        private Font Font = new Font("Gotham", 10);
+        private Font Font = new Font("Gotham", 9);
         private int TodayRow { get; set; } = 2;
         private int Rows { get; set; } = 5;
         private Color BorderColor => Color.FromArgb(230, 230, 230);
@@ -29,7 +29,6 @@ namespace OSCalendar.MainWindow
 
         public MainForm()
         {
-            var f = FontFamily.Families;
             MinimumSize = new Size(800, 600);
             //Opacity = 0.9;
             //this.SetStyle(ControlStyles.SupportsTransparentBackColor, true);
@@ -164,6 +163,7 @@ namespace OSCalendar.MainWindow
                 var weekNumber = constructor.CreateLabel(CalculateWeekNumber(startDate).ToString());
                 weekNumber.BackColor = BackBlack;
                 weekNumber.ForeColor = GrayText;
+                weekNumber.TextAlign = ContentAlignment.MiddleCenter;
                 rowTable.PushRow(weekNumber, SizeType.Percent, 100, 0);
 
                 weekNumbers.Add(weekNumber);
