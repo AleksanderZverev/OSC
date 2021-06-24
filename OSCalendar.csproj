@@ -7,7 +7,15 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\C#\Проекты для себя\BotHelper On .Net Core\WinFormsInfrastructure\WinFormsInfrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Images\Icons\" />
   </ItemGroup>
 
 </Project>
