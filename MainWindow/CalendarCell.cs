@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Drawing;
+using System.Linq;
 using System.Windows.Forms;
 using OSCalendar.Domain.Entities;
 using OSCalendar.Domain.Storages;
@@ -20,9 +21,11 @@ namespace OSCalendar.MainWindow
         private TableLayoutPanel table;
         private Label header;
         private Label text;
+        private Stopwatch stopwatch;
 
         private Color GrayText => Color.FromArgb(153, 153, 153);
         private Color LightGray => Color.FromArgb(247, 247, 247);
+        private Color LightBlue => Color.FromArgb(208, 234, 252);
         private Color BackBlack => Color.FromArgb(51, 51, 51);
 
         public CalendarCell(IFormConstructor constructor, IStorage<CalendarDayInfo> storage)
@@ -61,7 +64,18 @@ namespace OSCalendar.MainWindow
             {
                 var headerTable = constructor.CreateTableLayoutPanel("100% 25px");
                 
-                var stopwatch = new Stopwatch(constructor, storage, headerHeight);
+                stopwatch = new Stopwatch(constructor, storage, headerHeight);
+                stopwatch.Stop += (s, a) =>
+                {
+                    var calendarDayInfo = GetCurrentCalendarDayInfo();
+                    if (calendarDayInfo == null)
+                    {
+                        calendarDayInfo = new CalendarDayInfo {Date = Date.AddDays(0)};
+                    }
+                    calendarDayInfo.Stopwatches.Add(a);
+                    storage.Save(calendarDayInfo);
+                    table.Invalidate();
+                };
                 var stopwatchView = stopwatch.GetView();
 
                 headerTable.PushRow(stopwatchView, SizeType.Percent, 100, 0);
@@ -78,12 +92,6 @@ namespace OSCalendar.MainWindow
             table.Paint += Table_Paint;
             table.MouseClick += Table_MouseClick;
             table.Margin = new Padding(1);
-        }
-
-        private void Text_Paint(object sender, PaintEventArgs e)
-        {
-            var record = storage.Get(d => DaysEquals(Date, d.Date));
-            text.Text = record?.Text;
         }
 
         private void Table_MouseClick(object sender, MouseEventArgs e)
@@ -109,17 +117,36 @@ namespace OSCalendar.MainWindow
 
         private void EditForm_CellChanged(object sender, EditCellInfo e)
         {
-            text.Text = e.Text;
-            var calendarDayInfo = new CalendarDayInfo {Text = e.Text, Date = Date.AddDays(0)};
+            text.Text = e.Text.Trim();
+            Save(text.Text);
+        }
+
+        private void Header_Paint(object sender, PaintEventArgs e)
+        {
+            var day = Date.Day;
+            header.Text = day == 1 ? Date.ToString("d MMMM") : day.ToString();
+        }
+
+        private void Save(string newCellText)
+        {
+            var calendarDayInfo = new CalendarDayInfo { Text = newCellText, Date = Date.AddDays(0) };
             storage.Save(calendarDayInfo);
         }
+
+        private void Text_Paint(object sender, PaintEventArgs e)
+        {
+            var record = GetCurrentCalendarDayInfo();
+            text.Text = record?.ToString();
+        }
+
+        private CalendarDayInfo GetCurrentCalendarDayInfo() => storage.Get(d => DaysEquals(Date, d.Date));
 
         private void Table_Paint(object sender, PaintEventArgs e)
         {
             var now = DateTime.Now;
             if (Date.Month == now.Month && Date.Day == now.Day)
             {
-                table.BackColor = Color.LightBlue;
+                table.BackColor = LightBlue;
             }
             else if (Date.DayOfWeek == DayOfWeek.Sunday || Date.DayOfWeek == DayOfWeek.Saturday)
             {
@@ -129,12 +156,6 @@ namespace OSCalendar.MainWindow
             {
                 table.BackColor = Color.White;
             }
-        }
-
-        private void Header_Paint(object sender, PaintEventArgs e)
-        {
-            var day = Date.Day;
-            header.Text = day == 1 ? Date.ToString("d MMMM") : day.ToString();
         }
 
         private bool DaysEquals(DateTime d1, DateTime d2) =>

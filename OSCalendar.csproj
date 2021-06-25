@@ -9,8 +9,10 @@
   <ItemGroup>
     <None Remove="Images\Icons\pause.png" />
     <None Remove="Images\Icons\pause_hover.png" />
+    <None Remove="Images\Icons\pause_state.png" />
     <None Remove="Images\Icons\play.png" />
     <None Remove="Images\Icons\play_hover.png" />
+    <None Remove="Images\Icons\play_state.png" />
     <None Remove="Images\Icons\stop.png" />
     <None Remove="Images\Icons\stop_hover.png" />
   </ItemGroup>
@@ -25,9 +27,11 @@
 
   <ItemGroup>
     <Resource Include="Images\Icons\pause_hover.png" />
+    <Resource Include="Images\Icons\pause_state.png" />
     <Resource Include="Images\Icons\play.png" />
     <Resource Include="Images\Icons\pause.png" />
     <Resource Include="Images\Icons\play_hover.png" />
+    <Resource Include="Images\Icons\play_state.png" />
     <Resource Include="Images\Icons\stop.png" />
     <Resource Include="Images\Icons\stop_hover.png" />
   </ItemGroup>

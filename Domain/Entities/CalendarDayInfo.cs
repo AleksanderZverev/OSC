@@ -1,4 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using OSCalendar.Instruments;
 
 namespace OSCalendar.Domain.Entities
 {
@@ -6,6 +9,7 @@ namespace OSCalendar.Domain.Entities
     {
         public DateTime Date { get; set; }
         public string Text { get; set; }
+        public List<StopwatchInfo> Stopwatches { get; } = new List<StopwatchInfo>();
 
         public int CompareTo(CalendarDayInfo other)
         {
@@ -17,6 +21,9 @@ namespace OSCalendar.Domain.Entities
 
         public static bool operator ==(CalendarDayInfo d1, CalendarDayInfo d2)
         {
+            if (ReferenceEquals(d1, null) && ReferenceEquals(d2, null))
+                return true;
+
             if (ReferenceEquals(d1, null) || ReferenceEquals(d2, null))
                 return false;
 
@@ -30,5 +37,20 @@ namespace OSCalendar.Domain.Entities
 
         private static DateTime CreateNormalizedDate(CalendarDayInfo dayInfo)
             => new DateTime(dayInfo.Date.Year, dayInfo.Date.Month, dayInfo.Date.Day);
+
+        public override string ToString()
+        {
+            var stopwatchesText = Stopwatches.Count > 0
+                ? string.Join(Environment.NewLine, Stopwatches.Select(r => r.ToString()))
+                : null;
+
+            var newText = Text;
+
+            if (stopwatchesText != null)
+            {
+                newText += Environment.NewLine + stopwatchesText;
+            }
+            return newText;
+        }
     }
 }

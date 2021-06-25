@@ -31,13 +31,18 @@ namespace OSCalendar.Domain.Storages
             if (item != null)
                 DayInfos.Remove(item);
 
-            if (!string.IsNullOrWhiteSpace(newDayInfo.Text.Trim()))
+            if (!string.IsNullOrWhiteSpace(newDayInfo.Text?.Trim())
+                || newDayInfo.Stopwatches.Count > 0)
                 DayInfos.Add(newDayInfo);
 
             Write(DayInfos);
         }
 
-        public CalendarDayInfo Get(Func<CalendarDayInfo, bool> predicate) => DayInfos.FirstOrDefault(predicate);
+        public CalendarDayInfo Get(Func<CalendarDayInfo, bool> predicate)
+        {
+            var item = DayInfos.FirstOrDefault(predicate);
+            return item;
+        } 
 
 
         public IEnumerable<CalendarDayInfo> GetAll() => DayInfos;
