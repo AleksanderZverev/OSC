@@ -22,6 +22,8 @@ namespace OSCalendar.MainWindow
         private Label header;
         private Label text;
         private Stopwatch stopwatch;
+        private Control stopwatchView;
+        private EditCellForm editForm;
 
         private Color GrayText => Color.FromArgb(153, 153, 153);
         private Color LightGray => Color.FromArgb(247, 247, 247);
@@ -76,7 +78,8 @@ namespace OSCalendar.MainWindow
                     storage.Save(calendarDayInfo);
                     table.Invalidate();
                 };
-                var stopwatchView = stopwatch.GetView();
+                stopwatchView = stopwatch.GetView();
+                stopwatchView.Paint += StopwatchView_Paint;
 
                 headerTable.PushRow(stopwatchView, SizeType.Percent, 100, 0);
                 headerTable.PushColumn(header, 1);
@@ -92,6 +95,40 @@ namespace OSCalendar.MainWindow
             table.Paint += Table_Paint;
             table.MouseClick += Table_MouseClick;
             table.Margin = new Padding(1);
+
+            text.MouseDown += Table_MouseDown;
+            text.MouseUp += Table_MouseUp;
+        }
+
+        private void Table_MouseUp(object sender, MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Left)
+            {
+                editForm?.Close();
+            }
+        }
+
+        private void Table_MouseDown(object sender, MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Left)
+            {
+                ShowEditForm(true);
+            }
+        }
+
+        private void StopwatchView_Paint(object sender, PaintEventArgs e)
+        {
+            if (stopwatchView == null)
+            {
+                return;
+            }
+
+            var now = DateTime.Now;
+
+            if (Date.Month != now.Month || Date.Day != now.Day)
+            {
+                stopwatchView.Visible = false;
+            }
         }
 
         private void Table_MouseClick(object sender, MouseEventArgs e)
@@ -110,8 +147,19 @@ namespace OSCalendar.MainWindow
 
         private void ChangeText_Click(object sender, EventArgs e)
         {
-            var editForm = new EditCellForm(constructor, this, text.Text);
+            ShowEditForm();
+        }
+
+        private void ShowEditForm(bool isReadOnly = false)
+        {
+            editForm = new EditCellForm(constructor, this, text.Text);
+            editForm.TopMost = true;
             editForm.CellChanged += EditForm_CellChanged;
+
+            editForm.ReadOnly = isReadOnly;
+
+            var location = text.PointToScreen(text.Location);
+            FormViewer.SetFormStartLocation(editForm, location.X, location.Y);
             editForm.Show();
         }
 
@@ -147,6 +195,11 @@ namespace OSCalendar.MainWindow
             if (Date.Month == now.Month && Date.Day == now.Day)
             {
                 table.BackColor = LightBlue;
+
+                if (stopwatchView != null)
+                {
+                    stopwatchView.Visible = true;
+                }
             }
             else if (Date.DayOfWeek == DayOfWeek.Sunday || Date.DayOfWeek == DayOfWeek.Saturday)
             {

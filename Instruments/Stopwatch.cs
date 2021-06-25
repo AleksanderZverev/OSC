@@ -105,6 +105,10 @@ namespace OSCalendar.Instruments
             
             var location = stopBtn.PointToScreen(stopBtn.Location);
             var name = PromptBox.Show("Введите название", location.X, location.Y);
+
+            if (string.IsNullOrEmpty(name))
+                return;
+
             var stopwatchInfo = new StopwatchInfo(name, CurrentSpan);
             records.Add(stopwatchInfo);
 
@@ -144,7 +148,9 @@ namespace OSCalendar.Instruments
 
         public override string ToString()
         {
-            return $"{Name} {TimeSpan.Hours}:{TimeSpan.Minutes}:{TimeSpan.Seconds}";
+            return $"{Name} {TimeSpan.Hours}:{FormatNumber(TimeSpan.Minutes)}:{FormatNumber(TimeSpan.Seconds)}";
         }
+
+        private string FormatNumber(int n) => (n > 9 ? "" : "0") + n;
     }
 }

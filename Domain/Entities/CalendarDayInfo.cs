@@ -46,11 +46,30 @@ namespace OSCalendar.Domain.Entities
 
             var newText = Text;
 
+            if (Stopwatches.Count > 1)
+            {
+                var total = TotalTimeSpan();
+                newText += Environment.NewLine + $"{total.Hours}:{FormatNumber(total.Minutes)}:{FormatNumber(total.Seconds)}";
+            }
+
             if (stopwatchesText != null)
             {
                 newText += Environment.NewLine + stopwatchesText;
             }
             return newText;
         }
+
+        private TimeSpan TotalTimeSpan()
+        {
+            var total = new TimeSpan();
+            foreach (var stopwatchInfo in Stopwatches)
+            {
+                total += stopwatchInfo.TimeSpan;
+            }
+
+            return total;
+        }
+
+        private string FormatNumber(int n) => (n > 9 ? "" : "0") + n;
     }
 }
