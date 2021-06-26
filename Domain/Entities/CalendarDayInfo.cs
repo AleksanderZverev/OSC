@@ -9,12 +9,13 @@ namespace OSCalendar.Domain.Entities
     {
         public DateTime Date { get; set; }
         public string Text { get; set; }
+        public List<DayEvent> Events { get; } = new List<DayEvent>();
         public List<StopwatchInfo> Stopwatches { get; } = new List<StopwatchInfo>();
 
         public int CompareTo(CalendarDayInfo other)
         {
-            var otherDate = CreateNormalizedDate(other);
-            var currentDate = CreateNormalizedDate(this);
+            var otherDate = NormalizeDate(other);
+            var currentDate = NormalizeDate(this);
 
             return currentDate.CompareTo(otherDate);
         }
@@ -35,8 +36,13 @@ namespace OSCalendar.Domain.Entities
             return !(d1 == d2);
         }
 
-        private static DateTime CreateNormalizedDate(CalendarDayInfo dayInfo)
+        private static DateTime NormalizeDate(CalendarDayInfo dayInfo)
             => new DateTime(dayInfo.Date.Year, dayInfo.Date.Month, dayInfo.Date.Day);
+
+        public bool DateEquals(DateTime otherDate)
+        {
+            return Date.Year == otherDate.Year && Date.Month == otherDate.Month && Date.Day == otherDate.Day;
+        }
 
         public override string ToString()
         {

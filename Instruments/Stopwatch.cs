@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Windows.Forms;
+using OSCalendar.App.Views;
 using OSCalendar.Domain.Entities;
 using OSCalendar.Domain.Storages;
 using OSCalendar.Properties;
@@ -10,9 +11,11 @@ using WinFormsInfrastructure.Forms.PromptWindow;
 
 namespace OSCalendar.Instruments
 {
-    public class Stopwatch
+    public class Stopwatch : IView
     {
         public IReadOnlyList<StopwatchInfo> Records => records;
+
+        public bool Visible => table?.Visible ?? false;
 
         public event EventHandler<StopwatchInfo> Stop
         {
@@ -24,6 +27,7 @@ namespace OSCalendar.Instruments
 
         private readonly IFormConstructor constructor;
         private readonly IStorage<CalendarDayInfo> storage;
+        private readonly DateTime date;
         private readonly int height;
         private TableLayoutPanel table;
         private Button playBtn;
@@ -37,10 +41,11 @@ namespace OSCalendar.Instruments
         private TimeSpan CurrentSpan { get; set; }
         private DateTime Start { get; set; }
 
-        public Stopwatch(IFormConstructor constructor, IStorage<CalendarDayInfo> storage, int height)
+        public Stopwatch(IFormConstructor constructor, IStorage<CalendarDayInfo> storage, DateTime date, int height)
         {
             this.constructor = constructor;
             this.storage = storage;
+            this.date = date;
             this.height = height;
         }
 
@@ -82,6 +87,11 @@ namespace OSCalendar.Instruments
             table.PushColumn(new Control(), 4);
         }
 
+        public void SetVisible(bool visible)
+        {
+            table.Visible = visible;
+        }
+
         private void PlayBtn_Click(object sender, EventArgs e)
         {
             State = StopwatchState.Started;
@@ -107,7 +117,10 @@ namespace OSCalendar.Instruments
             var name = PromptBox.Show("Введите название", location.X, location.Y);
 
             if (string.IsNullOrEmpty(name))
+            {
+                Start = DateTime.UtcNow;
                 return;
+            }
 
             var stopwatchInfo = new StopwatchInfo(name, CurrentSpan);
             records.Add(stopwatchInfo);
@@ -115,6 +128,10 @@ namespace OSCalendar.Instruments
             State = StopwatchState.Stopped;
             CurrentSpan = default;
             stateBox.Image = null;
+
+            var currentDayInfo = storage.GetOrCreate(date);
+            currentDayInfo.Stopwatches.Add(stopwatchInfo);
+            storage.Save(currentDayInfo);
 
             StopCalled(stopwatchInfo);
         }

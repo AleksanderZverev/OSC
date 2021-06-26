@@ -41,9 +41,21 @@ namespace OSCalendar.Domain.Storages
         public CalendarDayInfo Get(Func<CalendarDayInfo, bool> predicate)
         {
             var item = DayInfos.FirstOrDefault(predicate);
-            return item;
-        } 
 
+            return item;
+        }
+
+        public CalendarDayInfo GetOrCreate(DateTime param)
+        {
+            var item = Get(r => r.DateEquals(param));
+
+            if (item == null)
+            {
+                item = new CalendarDayInfo {Date = param};
+            }
+
+            return item;
+        }
 
         public IEnumerable<CalendarDayInfo> GetAll() => DayInfos;
 

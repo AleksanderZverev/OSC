@@ -7,6 +7,7 @@ namespace OSCalendar.Domain.Storages
     {
         public void Save(TItem newDayInfo);
         public TItem Get(Func<TItem, bool> predicate);
+        public TItem GetOrCreate(DateTime param);
         public IEnumerable<TItem> GetAll();
     }
 }

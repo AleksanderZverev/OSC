@@ -23,7 +23,7 @@ namespace OSCalendar.MainWindow
         private DateTime CurrentStartDate { get; set; }
 
         private TableLayoutPanel mainTable;
-        private List<CalendarCell> cells = new List<CalendarCell>();
+        private List<CalendarCellView> cells = new List<CalendarCellView>();
         private List<Label> weekNumbers = new List<Label>();
         private LocalStorage localDb;
 
@@ -170,7 +170,7 @@ namespace OSCalendar.MainWindow
 
                 for (var j = 1; j < 8; j++)
                 {
-                    var calendarCell = new CalendarCell(constructor, localDb) {Date = startDate};
+                    var calendarCell = new CalendarCellView(constructor, localDb, startDate);
                     var dayCell = calendarCell.GetView();
 
                     rowTable.PushColumn(dayCell, j);
