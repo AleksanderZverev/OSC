@@ -28,15 +28,17 @@ namespace OSCalendar.MainWindow
         private readonly IStorage<CalendarDayInfo> storage;
 
         private TableLayoutPanel table;
-        private Label taskPanel;
+        private Control taskPanel;
         private EditCellForm editForm;
         private CellHeaderView headerView;
+        private CellTaskAreaView cellTaskAreaView;
 
         public CalendarCellView(IFormConstructor constructor, IStorage<CalendarDayInfo> storage, DateTime date)
         {
             this.constructor = constructor;
             this.storage = storage;
             Date = date;
+            cellTaskAreaView = new CellTaskAreaView(constructor, storage, date);
         }
 
         public Control GetView()
@@ -56,21 +58,19 @@ namespace OSCalendar.MainWindow
             var headerHeight = 20;
             headerView = new CellHeaderView(constructor, storage, Date, table);
             var header = headerView.GetView();
-            header.MouseClick += Table_MouseClick;
+            //header.MouseClick += Table_MouseClick;
 
-            taskPanel = constructor.CreateLabel();
-            taskPanel.TextAlign = ContentAlignment.TopLeft;
-            taskPanel.Paint += TaskPanelPaint;
-            taskPanel.MouseClick += Table_MouseClick;
+            taskPanel = cellTaskAreaView.GetView();
+            //taskPanel.MouseClick += Table_MouseClick;
 
             table.PushRow(header, SizeType.Absolute, headerHeight, 0);
             table.PushRow(taskPanel, SizeType.Percent, 80, 0);
             table.Paint += Table_Paint;
-            table.MouseClick += Table_MouseClick;
+           // table.MouseClick += Table_MouseClick;
             table.Margin = new Padding(1);
-
-            taskPanel.MouseDown += Table_MouseDown;
-            taskPanel.MouseUp += Table_MouseUp;
+            
+            //taskPanel.MouseDown += Table_MouseDown;
+            //taskPanel.MouseUp += Table_MouseUp;
         }
 
         private void DateChanged()
@@ -79,73 +79,82 @@ namespace OSCalendar.MainWindow
             {
                 headerView.Date = Date;
             }
-        }
 
-        private void Table_MouseUp(object sender, MouseEventArgs e)
-        {
-            if (e.Button == MouseButtons.Left)
+            if (taskPanel != null)
             {
-                editForm?.Close();
+                cellTaskAreaView.Date = Date;
             }
         }
 
-        private void Table_MouseDown(object sender, MouseEventArgs e)
+        //private void Table_MouseUp(object sender, MouseEventArgs e)
+        //{
+        //    if (e.Button == MouseButtons.Left)
+        //    {
+        //        editForm?.Close();
+        //    }
+        //}
+
+        //private void Table_MouseDown(object sender, MouseEventArgs e)
+        //{
+        //    if (e.Button == MouseButtons.Left)
+        //    {
+        //        ShowEditForm(true);
+        //    }
+        //}
+
+        //private void Table_MouseClick(object sender, MouseEventArgs e)
+        //{
+        //    if (e.Button == MouseButtons.Right)
+        //    {
+        //        var contextMenu = new ContextMenuStrip();
+
+        //        var menuItem = new ToolStripMenuItem("Изменить");
+        //        menuItem.Click += ChangeText_Click;
+
+        //        contextMenu.Items.Add(menuItem);
+        //        contextMenu.Show(table, e.Location);
+        //    }
+        //}
+
+        //private void ChangeText_Click(object sender, EventArgs e)
+        //{
+        //    ShowEditForm();
+        //}
+
+        //private void ShowEditForm(bool isReadOnly = false)
+        //{
+        //    editForm = new EditCellForm(constructor, storage, Date, isReadOnly);
+        //    editForm.CellChanged += EditForm_CellChanged;
+        //    //editForm.TopMost = true;
+        //    //editForm.CellChanged += EditForm_CellChanged;
+
+        //    var location = taskPanel.PointToScreen(taskPanel.Location);
+        //    FormViewer.SetFormStartLocation(editForm, location.X, location.Y);
+        //    editForm.Show();
+        //}
+
+        private void EditForm_CellChanged(object sender, EventArgs e)
         {
-            if (e.Button == MouseButtons.Left)
-            {
-                ShowEditForm(true);
-            }
+            
         }
 
-        private void Table_MouseClick(object sender, MouseEventArgs e)
-        {
-            if (e.Button == MouseButtons.Right)
-            {
-                var contextMenu = new ContextMenuStrip();
+        //private void EditForm_CellChanged(object sender, EditCellInfo e)
+        //{
+        //    taskPanel.Text = e.Text.Trim();
+        //    Save(taskPanel.Text);
+        //}
 
-                var menuItem = new ToolStripMenuItem("Изменить");
-                menuItem.Click += ChangeText_Click;
+        //private void Save(string newCellText)
+        //{
+        //    var calendarDayInfo = new CalendarDayInfo { Text = newCellText, Date = Date.AddDays(0) };
+        //    storage.Save(calendarDayInfo);
+        //}
 
-                contextMenu.Items.Add(menuItem);
-                contextMenu.Show(table, e.Location);
-            }
-        }
-
-        private void ChangeText_Click(object sender, EventArgs e)
-        {
-            ShowEditForm();
-        }
-
-        private void ShowEditForm(bool isReadOnly = false)
-        {
-            editForm = new EditCellForm(constructor, storage, Date, taskPanel.Text);
-            editForm.TopMost = true;
-            editForm.CellChanged += EditForm_CellChanged;
-
-            editForm.ReadOnly = isReadOnly;
-
-            var location = taskPanel.PointToScreen(taskPanel.Location);
-            FormViewer.SetFormStartLocation(editForm, location.X, location.Y);
-            editForm.Show();
-        }
-
-        private void EditForm_CellChanged(object sender, EditCellInfo e)
-        {
-            taskPanel.Text = e.Text.Trim();
-            Save(taskPanel.Text);
-        }
-
-        private void Save(string newCellText)
-        {
-            var calendarDayInfo = new CalendarDayInfo { Text = newCellText, Date = Date.AddDays(0) };
-            storage.Save(calendarDayInfo);
-        }
-
-        private void TaskPanelPaint(object sender, PaintEventArgs e)
-        {
-            var record = GetCurrentCalendarDayInfo();
-            taskPanel.Text = record?.ToString();
-        }
+        //private void TaskPanelPaint(object sender, PaintEventArgs e)
+        //{
+        //    var record = GetCurrentCalendarDayInfo();
+        //    taskPanel.Text = record?.ToString();
+        //}
 
         private CalendarDayInfo GetCurrentCalendarDayInfo() => storage.Get(d => DateComparer.DaysEquals(Date, d.Date));
 

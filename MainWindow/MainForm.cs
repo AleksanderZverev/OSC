@@ -187,7 +187,14 @@ namespace OSCalendar.MainWindow
 
         private DateTime CalculateStartDate(DateTime from)
         {
-            return from.AddDays(-((int)from.DayOfWeek - 1 + 7 * (TodayRow - 1)));
+            var dayOfWeekPast = (int) from.DayOfWeek - 1;
+
+            if (dayOfWeekPast < 0)
+            {
+                dayOfWeekPast = 6;
+            }
+
+            return from.AddDays(-(dayOfWeekPast + 7 * (TodayRow - 1)));
         }
 
         private int CalculateWeekNumber(DateTime from)

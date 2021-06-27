@@ -2,6 +2,7 @@
 using System.Windows.Forms;
 using OSCalendar.Domain.Entities;
 using OSCalendar.Domain.Storages;
+using OSCalendar.EditCellWindow;
 using WinFormsInfrastructure.Constructors;
 using WinFormsInfrastructure.Containers;
 using WinFormsInfrastructure.Extensions;
@@ -25,14 +26,15 @@ namespace OSCalendar.App.Views
         private readonly IStorage<CalendarDayInfo> storage;
         private TableContainer table;
         private Label textLabel;
-        private EventView eventView;
+        private EventsListView eventsListView;
+        private EditCellForm editForm;
 
         public CellTaskAreaView(IFormConstructor constructor, IStorage<CalendarDayInfo> storage, DateTime date)
         {
             Date = date;
             this.constructor = constructor;
             this.storage = storage;
-            eventView = new EventView(constructor, storage, date);
+            eventsListView = new EventsListView(constructor, storage, date, true);
         }
 
         public Control GetView()
@@ -48,9 +50,20 @@ namespace OSCalendar.App.Views
         public void CreateView()
         {
             table = constructor.CreateTableLayoutPanel("100%");
+            table.MouseDown += Table_MouseDown;
+            table.MouseUp += Table_MouseUp;
+            table.MouseClick += Table_MouseClick;
 
             textLabel = constructor.CreateLabel();
-            var eventsView = eventView.GetView();
+            textLabel.MouseDown += Table_MouseDown;
+            textLabel.MouseUp += Table_MouseUp;
+            textLabel.MouseClick += Table_MouseClick;
+            UpdateTextLabel();
+
+            var eventsView = eventsListView.GetView();
+            eventsView.MouseDown += Table_MouseDown;
+            eventsView.MouseUp += Table_MouseUp;
+            eventsView.MouseClick += Table_MouseClick;
 
             table.PushRow(textLabel, SizeType.Percent, 10, 0);
             table.PushRow(eventsView, SizeType.Percent, 50, 0);
@@ -58,8 +71,62 @@ namespace OSCalendar.App.Views
 
         public void DateChanged()
         {
-            if (eventView != null)
-                eventView.Date = Date;
+            if (eventsListView != null)
+                eventsListView.Date = Date;
+
+            UpdateTextLabel();
+        }
+
+        private void UpdateTextLabel()
+        {
+            var dayInfo = storage?.Get(r => r.DateEquals(Date));
+
+            if (textLabel != null)
+                textLabel.Text = dayInfo?.Text;
+        }
+
+        private void Table_MouseUp(object sender, MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Left)
+            {
+                editForm?.Close();
+            }
+        }
+
+        private void Table_MouseDown(object sender, MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Left)
+            {
+                ShowEditForm(true);
+            }
+        }
+
+        private void Table_MouseClick(object sender, MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Right)
+            {
+                var contextMenu = new ContextMenuStrip();
+
+                var menuItem = new ToolStripMenuItem("Изменить");
+                menuItem.Click += ChangeText_Click;
+
+                contextMenu.Items.Add(menuItem);
+                contextMenu.Show(table, e.Location);
+            }
+        }
+
+        private void ChangeText_Click(object sender, EventArgs e)
+        {
+            ShowEditForm();
+        }
+
+        private void ShowEditForm(bool isReadOnly = false)
+        {
+            editForm = new EditCellForm(constructor, storage, Date, isReadOnly, textLabel.Text);
+
+            var location = table.PointToScreen(table.Location);
+            FormViewer.SetFormStartLocation(editForm, location.X, location.Y);
+            editForm.Show();
         }
     }
 }

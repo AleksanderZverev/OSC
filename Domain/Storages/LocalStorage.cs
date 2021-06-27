@@ -32,6 +32,7 @@ namespace OSCalendar.Domain.Storages
                 DayInfos.Remove(item);
 
             if (!string.IsNullOrWhiteSpace(newDayInfo.Text?.Trim())
+                || newDayInfo.Events.Count > 0
                 || newDayInfo.Stopwatches.Count > 0)
                 DayInfos.Add(newDayInfo);
 

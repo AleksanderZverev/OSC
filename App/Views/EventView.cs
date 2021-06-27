@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Windows.Forms;
-using OSCalendar.Domain;
 using OSCalendar.Domain.Entities;
 using OSCalendar.Domain.Storages;
 using OSCalendar.EditEventWindow;
@@ -12,28 +11,27 @@ namespace OSCalendar.App.Views
 {
     public class EventView : IView
     {
-        private DateTime date;
-
-        public DateTime Date
-        {
-            get => date;
-            set
-            {
-                LastDate = date;
-                date = value;
-            }
-        }
-        private DateTime LastDate { get; set; }
-
+        public DayEvent DayEvent { get; private set; }
+        public EventState State { get; private set; } = EventState.Unchanged;
+        public bool IsReadOnly { get; private set; }
 
         private readonly IFormConstructor constructor;
         private readonly IStorage<CalendarDayInfo> storage;
-        private TableContainer mainTable;
 
-        public EventView(IFormConstructor constructor, IStorage<CalendarDayInfo> storage, DateTime date)
+        private TableContainer mainTable;
+        private Label titleLabel;
+        private Button removeBtn;
+
+        public EventView(
+            IFormConstructor constructor, 
+            IStorage<CalendarDayInfo> storage, 
+            DayEvent dayEvent, 
+            bool isReadOnly, 
+            EventState state = EventState.Unchanged)
         {
-            Date = date;
-            LastDate = date;
+            DayEvent = dayEvent;
+            IsReadOnly = isReadOnly;
+            State = state;
             this.constructor = constructor;
             this.storage = storage;
         }
@@ -42,75 +40,71 @@ namespace OSCalendar.App.Views
         {
             if (mainTable == null)
             {
-                CreateView();
+                CreateEventView();
             }
 
             return mainTable;
         }
 
-        public void CreateView()
+        public Control CreateEventView()
         {
-            mainTable = constructor.CreateTableLayoutPanel("100%");
-            mainTable.Paint += MainTable_Paint;
+            mainTable = constructor.CreateTableLayoutPanel("100% 30px");
 
-            UpdateView();
+            titleLabel = constructor.CreateLabel(DayEvent.Title);
+            titleLabel.Click += TitleLabel_Click;
+
+            removeBtn = constructor.CreateButton("-");
+            removeBtn.Visible = !IsReadOnly;
+            removeBtn.Click += RemoveBtn_Click;
+
+            mainTable.PushRow(titleLabel, SizeType.Percent, 100, 0);
+            mainTable.PushColumn(removeBtn, 1);
+
+            return mainTable;
         }
 
-        private void MainTable_Paint(object sender, PaintEventArgs e)
+        public void SetReadOnly(bool isReadOnly)
         {
-            if (!DateComparer.DaysEquals(Date, LastDate))
-            {
-                UpdateView();
-            }
-        }
-
-        public void UpdateView()
-        {
-            var dayInfo = storage.Get(d => d.DateEquals(Date));
-
-            if (dayInfo == null)
-            {
+            if (IsReadOnly == isReadOnly)
                 return;
-            }
 
-            if (mainTable.RowCount != 0)
-            {
-                mainTable.RowStyles.Clear();
-            }
-
-            foreach (var dayEvent in dayInfo.Events)
-            {
-                mainTable.PushRow(CreateEventView(dayEvent), SizeType.Absolute, 15, 0);
-            }
+            IsReadOnly = isReadOnly;
+            removeBtn.Visible = !isReadOnly;
         }
 
-        public Control CreateEventView(DayEvent dayEvent)
+        private void RemoveBtn_Click(object sender, EventArgs e)
         {
-            var table = constructor.CreateTableLayoutPanel("100%");
-            var titleLabel = constructor.CreateLabel(dayEvent.Title);
-
-            table.PushRow(titleLabel, SizeType.Percent, 100, 0);
-
-            titleLabel.Click += (s, a) => ShowEditForm((Control)s, dayEvent);
-
-            return table;
+            State = EventState.Deleted;
         }
 
-        private void ShowEditForm(Control source, DayEvent dayEvent)
+        private void TitleLabel_Click(object sender, EventArgs e)
         {
-            var editForm = new EditEventForm(constructor, dayEvent);
+            ShowEditForm(titleLabel);
+        }
+
+        private void ShowEditForm(Control source)
+        {
+            if (IsReadOnly)
+                return;
+
+            var editForm = new EditEventForm(constructor, DayEvent);
             FormViewer.SetFormStartLocation(editForm, source);
             editForm.ShowDialog();
 
             if (editForm.IsCanceled)
                 return;
 
-            var dayInfo = storage.Get(r => r.DateEquals(dayEvent.From));
-            
-            dayInfo.Events.Remove(dayEvent);
-            dayInfo.Events.Add(editForm.ResultDayEvent);
-            
-            storage.Save(dayInfo);
+            DayEvent = editForm.ResultDayEvent;
+            State = EventState.Updated;
+            titleLabel.Text = DayEvent.Title;
+        }
+
+        public enum EventState
+        {
+            Unchanged,
+            Added,
+            Updated,
+            Deleted,
         }
     }
 }

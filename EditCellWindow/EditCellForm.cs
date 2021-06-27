@@ -17,25 +17,24 @@ namespace OSCalendar.EditCellWindow
     public class EditCellForm : Form
     {
         public DateTime Date { get; }
+        public bool IsReadOnly { get; }
 
         private readonly IFormConstructor constructor;
         private readonly IStorage<CalendarDayInfo> storage;
-        public bool ReadOnly { get; set; }
 
         private TableLayoutPanel mainTable;
 
-        private readonly List<EventHandler<EditCellInfo>> cellChangedEvents = new List<EventHandler<EditCellInfo>>();
+        private readonly List<EventHandler> cellChangedEvents = new List<EventHandler>();
         private TextBox textEditor;
         private Label headerLabel;
         private Button applyBtn;
         private Button cancelButton;
         private TableLayoutPanel confirmTable;
-        private TableContainer eventsTable;
 
         private List<DayEvent> dayEvents = new List<DayEvent>();
-        private Button addEventBtn;
+        private EventsListView eventsListView;
 
-        public event EventHandler<EditCellInfo> CellChanged
+        public event EventHandler CellChanged
         {
             add => cellChangedEvents.Add(value);
             remove => cellChangedEvents.Remove(value);
@@ -44,10 +43,12 @@ namespace OSCalendar.EditCellWindow
         public EditCellForm(
             IFormConstructor constructor, 
             IStorage<CalendarDayInfo> storage, 
-            DateTime date, 
+            DateTime date,
+            bool isReadOnly,
             string startText = "")
         {
             Date = date;
+            IsReadOnly = isReadOnly;
             this.constructor = constructor;
             this.storage = storage;
 
@@ -63,13 +64,7 @@ namespace OSCalendar.EditCellWindow
             textEditor = constructor.CreateTextBox("", startText);
             textEditor.Multiline = true;
 
-            eventsTable = constructor.CreateTableLayoutPanel("100%");
-            eventsTable.Paint += EventsTable_Paint;
-
-            addEventBtn = constructor.CreateButton("+");
-            addEventBtn.Click += AddEventBtn_Click;
-            
-            eventsTable.PushRow(addEventBtn, SizeType.Absolute, 30, 0);
+            eventsListView = new EventsListView(constructor, storage, date, isReadOnly);
 
             confirmTable = constructor.CreateTableLayoutPanel("50% 50%");
 
@@ -84,7 +79,7 @@ namespace OSCalendar.EditCellWindow
 
             mainTable.PushRow(headerLabel, SizeType.Absolute, 25, 0);
             mainTable.PushRow(textEditor, SizeType.Percent, 50, 0);
-            mainTable.PushRow(eventsTable, SizeType.Percent, 50, 0);
+            mainTable.PushRow(eventsListView.GetView(), SizeType.Percent, 50, 0);
             mainTable.PushRow(confirmTable, SizeType.Absolute, 30, 0);
 
             Controls.Add(mainTable);
@@ -96,55 +91,57 @@ namespace OSCalendar.EditCellWindow
             Paint += EditCellForm_Paint;
         }
 
-        private void EventsTable_Paint(object sender, PaintEventArgs e)
-        {
-            var rows = eventsTable.RowCount;
+        //private void EventsTable_Paint(object sender, PaintEventArgs e)
+        //{
+        //    var rows = eventsTable.RowCount - 1;
 
-            if (rows != dayEvents.Count)
-            {
-                eventsTable.Controls.Remove(addEventBtn);
-                foreach (var dayEvent in dayEvents.Skip(rows))
-                {
-                    eventsTable.PushRow(CreateEventView(dayEvent), SizeType.Absolute, 30, 0);
-                }
+        //    if (rows != dayEvents.Count)
+        //    {
+        //        eventsTable.Controls.Remove(addEventBtn);
+        //        foreach (var dayEvent in dayEvents.Skip(rows))
+        //        {
+        //            eventsTable.PushRow(CreateEventView(dayEvent), SizeType.Absolute, 30, 0);
+        //        }
 
-                eventsTable.PushRow(addEventBtn, SizeType.Absolute, 30, 0);
-            }
-        }
+        //        eventsTable.PushRow(addEventBtn, SizeType.Absolute, 30, 0);
+        //    }
+        //}
 
-        private Control CreateEventView(DayEvent dayEvent)
-        {
-            var table = constructor.CreateTableLayoutPanel("100% 30px");
+        //private Control CreateEventView(DayEvent dayEvent)
+        //{
+        //    var table = constructor.CreateTableLayoutPanel("100% 30px");
 
-            var titleLabel = constructor.CreateLabel(dayEvent.Title);
-            var removeButton = constructor.CreateButton("-");
-            removeButton.Click += (s, a) => dayEvents.Remove(dayEvent);
+        //    var eventView = new EventView(constructor, storage, dayEvent);
 
-            table.PushRow(titleLabel, SizeType.AutoSize, 30, 0);
-            table.PushColumn(removeButton, 1);
+        //    var removeButton = constructor.CreateButton("-");
+        //    removeButton.Click += (s, a) => dayEvents.Remove(dayEvent);
 
-            return table;
-        }
+        //    table.PushRow(eventView.GetView(), SizeType.AutoSize, 30, 0);
+        //    table.PushColumn(removeButton, 1);
 
-        private void AddEventBtn_Click(object sender, EventArgs e)
-        {
-            var editEventForm = new EditEventForm(constructor, new DayEvent("", "", true));
-            editEventForm.TopMost = true;
-            FormViewer.SetFormStartLocation(editEventForm, headerLabel);
-            editEventForm.ShowDialog();
+        //    return table;
+        //}
 
-            if (editEventForm.IsCanceled)
-            {
-                return;
-            }
+        //private void AddEventBtn_Click(object sender, EventArgs e)
+        //{
+        //    var editEventForm = new EditEventForm(constructor, new DayEvent("", "", true));
+        //    editEventForm.TopMost = true;
+        //    FormViewer.SetFormStartLocation(editEventForm, headerLabel);
+        //    editEventForm.ShowDialog();
 
-            var newDayEvent = editEventForm.ResultDayEvent;
-            dayEvents.Add(newDayEvent);
-        }
+        //    if (editEventForm.IsCanceled)
+        //    {
+        //        return;
+        //    }
+
+        //    var newDayEvent = editEventForm.ResultDayEvent;
+        //    dayEvents.Add(newDayEvent);
+        //}
 
         private void EditCellForm_Paint(object sender, PaintEventArgs e)
         {
-            if (ReadOnly)
+            //можно в конструктор убрать
+            if (IsReadOnly)
             {
                 textEditor.ReadOnly = true;
                 confirmTable.Visible = false;
@@ -163,18 +160,16 @@ namespace OSCalendar.EditCellWindow
 
         private void ApplyBtn_Click(object sender, EventArgs e)
         {
-            var cellInfo = new EditCellInfo {Title = headerLabel.Text, Text = textEditor.Text.Trim()};
+            var dayInfo = new CalendarDayInfo {Date = Date, Text = textEditor.Text.Trim()};
+            dayInfo.Events.AddRange(eventsListView.EventViews.Select(v => v.DayEvent));
+
+            storage.Save(dayInfo);
+            
             foreach (var eventHandler in cellChangedEvents)
             {
-                eventHandler(this, cellInfo);
+                eventHandler(this, EventArgs.Empty);
             }
             Close();
         }
-    }
-
-    public class EditCellInfo
-    {
-        public string Title { get; set; }
-        public string Text { get; set; }
     }
 }

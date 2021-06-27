@@ -1,6 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
+using Newtonsoft.Json;
+using OSCalendar.Extensions;
 
 namespace OSCalendar.Domain.Entities
 {
@@ -20,8 +20,11 @@ namespace OSCalendar.Domain.Entities
             Description = description;
         }
 
-        public DayEvent() : this("unknown", "")
-        { }
+        public DayEvent(DateTime dateTime) : this("unknown", "")
+        {
+            From = dateTime;
+            To = dateTime;
+        }
 
         public DayEvent(string title, string description, bool isFullDay) : this(title, description)
         {
@@ -32,6 +35,37 @@ namespace OSCalendar.Domain.Entities
         {
             From = from;
             To = to;
+        }
+
+        [JsonConstructor]
+        public DayEvent(string title, string description, bool isFullDay, DateTime from, DateTime to) : this(title, description, from, to)
+        {
+            IsFullDay = isFullDay;
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(Title, Description, IsFullDay, From, To);
+        }
+
+        protected bool Equals(DayEvent other)
+        {
+            return Title == other.Title 
+                   && Description == other.Description 
+                   && IsFullDay == other.IsFullDay 
+                   && From.TimeEquals(other.From) 
+                   && To.TimeEquals(other.To);
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(null, obj)) 
+                return false;
+            if (ReferenceEquals(this, obj)) 
+                return true;
+            if (obj.GetType() != this.GetType()) 
+                return false;
+            return Equals((DayEvent) obj);
         }
     }
 }
